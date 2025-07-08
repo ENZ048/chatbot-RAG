@@ -87,3 +87,26 @@ exports.deleteChatbot = async (req, res) => {
     res.status(500).json({ message: "Server error while deleting chatbot" });
   }
 };
+
+exports.getAllChatbots = async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("chatbots")
+      .select("*, companies(name, url)")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    // Format the data to flatten company fields
+    const formatted = data.map((cb) => ({
+      ...cb,
+      company_name: cb.companies?.name || "N/A",
+      company_url: cb.companies?.url || "N/A",
+    }));
+
+    res.status(200).json({ chatbots: formatted });
+  } catch (err) {
+    console.error("Error fetching chatbots:", err.message);
+    res.status(500).json({ message: "Failed to fetch chatbots" });
+  }
+};

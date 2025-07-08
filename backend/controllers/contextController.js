@@ -12,6 +12,10 @@ exports.uploadContextFile = async (req, res) => {
       return res.status(400).json({ message: "No file uploaded." });
     }
 
+    if (!chatbotId) {
+      return res.status(400).json({ message: "Missing chatbotId." });
+    }
+
     const ext = file.originalname.split(".").pop().toLowerCase();
     const text = await extractTextFromFile(file.buffer, ext);
 
@@ -24,7 +28,7 @@ exports.uploadContextFile = async (req, res) => {
       data: results,
     });
   } catch (error) {
-    console.error("Upload file error:", error.message);
+    console.error("Upload file error:", error); // 🛠 full error log
     res.status(500).json({ message: "Error processing file" });
   }
 };
