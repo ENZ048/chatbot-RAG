@@ -119,7 +119,7 @@ exports.getMessageHistory = async (req, res) => {
       .from("messages") // or whatever your table is called
       .select("*")
       .eq("chatbot_id", id)
-      .order("created_at", { ascending: false });
+      .order("timestamp", { ascending: false });
 
     if (error) throw error;
 
