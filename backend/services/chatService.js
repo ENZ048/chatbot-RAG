@@ -2,16 +2,45 @@
 const axios = require("axios");
 
 async function generateAnswer(query, contextChunks) {
+  const forbiddenKeywords = [
+    "<html>",
+    "<script>",
+    "<style>",
+    "css",
+    "javascript",
+    "js",
+    "html",
+    "python",
+    "code",
+    "login form",
+    "write a function",
+  ];
+
+  const isCodeQuestion = forbiddenKeywords.some((word) =>
+    query.toLowerCase().includes(word)
+  );
+
+  if (isCodeQuestion) {
+    return res.status(403).json({
+      answer:
+        "I'm here to assist with our services. Unfortunately, I can't help with technical coding or scripts.",
+    });
+  }
+
   const systemPrompt = `
-You are a friendly, professional customer support assistant for our company.
+You are a professional customer support assistant for our company.
 
-Only use the information provided in the context below to answer questions.
-Respond like a real human support agent — do NOT mention the "context", "document", or "source".
-Never say phrases like "Based on the context" or "I found in the data".
-If you don't know the answer, respond like this:
-"I'm here to help with our services. Could you ask something more specific so I can assist you better?"
+ONLY answer questions that are directly related to our business, based on the context below.
 
-Speak naturally, helpfully, and always stay on topic.
+You MUST NOT answer:
+- Coding or technical questions (HTML, CSS, JS, Python, etc.)
+- Programming-related help
+- Anything involving writing or explaining code
+
+If a user asks such a question, politely respond:
+"I'm here to assist with our services. Unfortunately, I can't provide technical coding help."
+
+NEVER say things like "Based on the context", "According to the document", or "I don't have access to...". Speak naturally and professionally.
 
 Context:
 ${contextChunks.join("\n---\n")}
