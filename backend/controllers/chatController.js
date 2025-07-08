@@ -14,7 +14,10 @@ exports.answerQuery = async (req, res) => {
 
     const chunks = await retrieveRelevantChunks(query, chatbotId);
     const topContext = chunks.map((c) => c.content);
-    const { answer, tokens } = await generateAnswer(query, topContext);
+    const { answer, tokens, suggestions } = await generateAnswer(
+      query,
+      topContext
+    );
 
     await supabase
       .from("chatbots")
@@ -42,7 +45,7 @@ exports.answerQuery = async (req, res) => {
       },
     ]);
 
-    res.status(200).json({ answer, sources: topContext });
+    res.status(200).json({  answer, suggestions, tokens });
   } catch (error) {
     console.error("Answer generation error:", error.message);
     res.status(500).json({ message: "Error generating answer" });

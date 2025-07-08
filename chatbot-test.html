@@ -237,7 +237,7 @@
       messages.scrollTop = messages.scrollHeight;
     }
 
-    function addMessage(role, text, avatar = null) {
+    function addMessage(role, text, avatar = null, suggestions = []) {
       const row = document.createElement("div");
       row.className = `troika-msg ${role}`;
 
@@ -259,6 +259,33 @@
       } else {
         row.appendChild(img);
         row.appendChild(bubble);
+
+        // ✅ Attach suggestions under bot message if provided
+        if (Array.isArray(suggestions) && suggestions.length > 0) {
+          const suggContainer = document.createElement("div");
+          suggContainer.style.display = "flex";
+          suggContainer.style.flexWrap = "wrap";
+          suggContainer.style.gap = "6px";
+          suggContainer.style.marginTop = "6px";
+
+          suggestions.forEach((text) => {
+            const btn = document.createElement("button");
+            btn.innerText = text;
+            btn.style.padding = "6px 12px";
+            btn.style.fontSize = "13px";
+            btn.style.borderRadius = "16px";
+            btn.style.border = "1px solid #ddd";
+            btn.style.background = "#fff";
+            btn.style.cursor = "pointer";
+            btn.onclick = () => {
+              input.value = text;
+              sendMessage();
+            };
+            suggContainer.appendChild(btn);
+          });
+
+          row.appendChild(suggContainer);
+        }
       }
 
       messages.appendChild(row);
@@ -298,17 +325,28 @@
       showTyping();
 
       try {
-        const res = await fetch("http://localhost:5000/api/chat/query", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query, chatbotId, sessionId }),
-        });
+        const res = await fetch(
+          "https://chatbot-rag-production-319e.up.railway.app/api/chat/query",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query, chatbotId, sessionId }),
+          }
+        );
 
         const data = await res.json();
         removeTyping();
 
         if (res.ok) {
-          addMessage("bot", data.answer || "(No response)");
+          addMessage(
+            "bot",
+            data.answer || "(No response)",
+            null,
+            data.suggestions || []
+          );
+          if (Array.isArray(data.suggestions) && data.suggestions.length > 0) {
+            showSuggestions(data.suggestions);
+          }
         } else {
           addMessage("bot", `❌ ${data.message || "Error"}`);
         }
