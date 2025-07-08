@@ -18,7 +18,7 @@ ${contextChunks.join("\n---\n")}
         model: "gpt-3.5-turbo",
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: query }
+          { role: "user", content: query },
         ],
         temperature: 0.3,
       },
@@ -33,15 +33,13 @@ ${contextChunks.join("\n---\n")}
     const mainAnswer = response.data.choices[0].message.content;
 
     // 🔁 Now ask GPT to generate 3 related suggestions:
-    const suggestionPrompt = `Based on this answer: "${mainAnswer}", suggest 3 natural follow-up questions a customer might ask. Respond as a JSON array of strings.`;
+    const suggestionPrompt = `Based on this answer: "${mainAnswer}",  Generate 3 short, concise follow-up questions related to the answer. Each should be under 12 words. Respond as a JSON array of strings.`;
 
     const suggestionResponse = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
         model: "gpt-3.5-turbo",
-        messages: [
-          { role: "user", content: suggestionPrompt }
-        ],
+        messages: [{ role: "user", content: suggestionPrompt }],
         temperature: 0.5,
       },
       {
@@ -55,7 +53,9 @@ ${contextChunks.join("\n---\n")}
     let suggestions = [];
 
     try {
-      suggestions = JSON.parse(suggestionResponse.data.choices[0].message.content);
+      const raw = suggestionResponse.data.choices[0].message.content;
+      const parsed = JSON.parse(raw);
+      suggestions = generateSuggestions(parsed);
     } catch (e) {
       suggestions = [];
     }
@@ -63,16 +63,30 @@ ${contextChunks.join("\n---\n")}
     return {
       answer: mainAnswer,
       suggestions,
-      tokens: response.data.usage.total_tokens + suggestionResponse.data.usage.total_tokens,
+      tokens:
+        response.data.usage.total_tokens +
+        suggestionResponse.data.usage?.total_tokens || 0,
     };
   } catch (error) {
-    console.error("Error generating response:", error.response?.data || error.message);
+    console.error(
+      "Error generating response:",
+      error.response?.data || error.message
+    );
     return {
-      answer: "Sorry, I'm currently unable to assist with that. Please try again later.",
+      answer:
+        "Sorry, I'm currently unable to assist with that. Please try again later.",
       suggestions: [],
-      tokens: 0
+      tokens: 0,
     };
   }
+}
+
+function generateSuggestions(rawSuggestions) {
+  const maxLength = 80; // Max characters per suggestion
+  return rawSuggestions
+    .filter((s) => typeof s === "string" && s.trim().length > 0)
+    .slice(0, 4) // Show only 4 max
+    .map((s) => (s.length > maxLength ? s.slice(0, maxLength - 3) + "..." : s));
 }
 
 module.exports = { generateAnswer };
