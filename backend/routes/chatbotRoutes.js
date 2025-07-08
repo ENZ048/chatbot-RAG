@@ -4,9 +4,9 @@ const {
   createChatbot,
   editChatbot,
   deleteChatbot,
-  getAllChatbotsWithStats,
   getMessageHistory,
-  updateTokenLimit
+  updateTokenLimit,
+  getAllChatbotsWithStats
 } = require("../controllers/chatbotCOntroller");
 const adminProtect = require("../middleware/adminAuthMiddleware");
 
