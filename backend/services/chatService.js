@@ -1,4 +1,3 @@
-// services/chatService.js
 const axios = require("axios");
 
 async function generateAnswer(query, contextChunks) {
@@ -21,10 +20,11 @@ async function generateAnswer(query, contextChunks) {
   );
 
   if (isCodeQuestion) {
-    return res.status(403).json({
+    return {
       answer:
         "I'm here to assist with our services. Unfortunately, I can't help with technical coding or scripts.",
-    });
+      tokens: 0,
+    };
   }
 
   const systemPrompt = `
@@ -85,7 +85,11 @@ ${contextChunks.join("\n---\n")}
       "Error generating response:",
       error.response?.data || error.message
     );
-    return "Sorry, I'm currently unable to assist with that. Please try again later.";
+    return {
+      answer:
+        "Sorry, I'm currently unable to assist with that. Please try again later.",
+      tokens: 0,
+    };
   }
 }
 
