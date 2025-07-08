@@ -9,7 +9,7 @@ dotenv.config();
 const app = express();
 
 const corsOptions = {
-  origin: ["https://troikatech.in", "https://troikatech.ai", "http://localhost:5173"],
+  origin: ["https://troikatech.in", "https://troikatech.ai", "http://localhost:5173", "https://aiwebdesigncompany.com"],
   credentials: true,
 };
 
