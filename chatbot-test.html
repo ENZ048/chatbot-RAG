@@ -1,0 +1,327 @@
+<!-- Troika Chatbot (Premium UI) -->
+<script>
+  (function () {
+    sessionStorage.removeItem("troika_greeted");
+    let greetingShown = false; // ✅ define it
+    const chatbotId = "6937cb59-2477-48a9-b7bd-7fd1930f1628";
+    const sessionId =
+      localStorage.getItem("troika_session") || crypto.randomUUID();
+    localStorage.setItem("troika_session", sessionId);
+
+    const css = `
+  #troika-chat-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6366F1, #4F46E5);
+    color: white;
+    font-size: 28px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+    z-index: 9999;
+  }
+
+  #troika-chatbox {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 360px;
+    height: 520px;
+    max-height: 90vh;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.2);
+    display: none;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 9999;
+    font-family: "Segoe UI", sans-serif;
+  }
+
+  @media (max-width: 480px) {
+    #troika-chatbox {
+      width: 90%;
+      right: 5%;
+      bottom: 90px;
+      height: 75vh;
+    }
+  }
+
+  #troika-header {
+    background: linear-gradient(to right, #4F46E5, #6366F1);
+    color: #fff;
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    font-size: 15px;
+  }
+
+  #troika-header span {
+    cursor: pointer;
+    font-size: 18px;
+  }
+
+  #troika-messages {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+    background: #F9FAFB;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    box-sizing: border-box;
+  }
+
+  .troika-msg {
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+  }
+
+  .troika-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .troika-bubble {
+    padding: 12px 16px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 80%;
+    word-wrap: break-word;
+  }
+
+  .user .troika-bubble {
+    background: #E0E7FF;
+    border-bottom-right-radius: 4px;
+    margin-left: auto;
+  }
+
+  .bot .troika-bubble {
+    background: #F3F4F6;
+    border-bottom-left-radius: 4px;
+    margin-right: auto;
+  }
+
+  #troika-input {
+    display: flex;
+    padding: 10px;
+    border-top: 1px solid #eee;
+    background: #fff;
+    align-items: center;
+    gap: 8px;
+  }
+
+  #troika-input input {
+    all: unset;
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #f1f1f1;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+  }
+
+  #troika-input button {
+    background: #4F46E5;
+    border: none;
+    color: white;
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #troika-input button:hover {
+    background: #4338CA;
+  }
+
+  .typing-indicator {
+    font-style: italic;
+    font-size: 13px;
+    opacity: 0.6;
+  }
+`;
+
+    const style = document.createElement("style");
+    style.innerHTML = css;
+    document.head.appendChild(style);
+
+    const button = document.createElement("button");
+    button.id = "troika-chat-button";
+    button.innerHTML = "💬";
+    document.body.appendChild(button);
+
+    const chatbox = document.createElement("div");
+    chatbox.id = "troika-chatbox";
+    chatbox.innerHTML = `
+    <div id="troika-header">Troika AI Assistant <span id="troika-close">✖</span></div>
+    <div id="troika-messages"></div>
+    <div id="troika-input">
+      <input type="text" placeholder="Type your message..." />
+      <button>➤</button>
+    </div>
+  `;
+    document.body.appendChild(chatbox);
+
+    const input = chatbox.querySelector("input");
+    const sendBtn = chatbox.querySelector("button");
+    const messages = chatbox.querySelector("#troika-messages");
+    const closeBtn = chatbox.querySelector("#troika-close");
+
+    button.onclick = () => {
+      chatbox.style.display = "flex";
+      showGreeting();
+    };
+
+    closeBtn.onclick = () => {
+      chatbox.style.display = "none";
+    };
+
+    function showGreeting() {
+      if (greetingShown) return; // ✅ now this works correctly
+      greetingShown = true; // ✅ mark it as shown in this session
+
+      sessionStorage.setItem("troika_greeted", "yes");
+      addMessage(
+        "bot",
+        "Hi there! 👋 I'm your virtual assistant. How can I help you today?"
+      );
+      showSuggestions([
+        "What services do you offer?",
+        "Can I see your portfolio?",
+        "How do I contact you?",
+      ]);
+    }
+
+    function showSuggestions(suggestions) {
+      const wrapper = document.createElement("div");
+      wrapper.style.display = "flex";
+      wrapper.style.flexWrap = "wrap";
+      wrapper.style.gap = "6px";
+      wrapper.style.marginTop = "4px";
+
+      suggestions.forEach((text) => {
+        const btn = document.createElement("button");
+        btn.innerText = text;
+        btn.style.padding = "6px 12px";
+        btn.style.fontSize = "13px";
+        btn.style.borderRadius = "16px";
+        btn.style.border = "1px solid #ddd";
+        btn.style.background = "#fff";
+        btn.style.cursor = "pointer";
+        btn.style.transition = "all 0.2s";
+        btn.onclick = () => {
+          messages.removeChild(wrapper);
+          input.value = text;
+          sendMessage();
+        };
+        wrapper.appendChild(btn);
+      });
+
+      messages.appendChild(wrapper);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function addMessage(role, text, avatar = null) {
+      const row = document.createElement("div");
+      row.className = `troika-msg ${role}`;
+
+      const bubble = document.createElement("div");
+      bubble.className = "troika-bubble";
+      bubble.innerText = text;
+
+      const img = document.createElement("img");
+      img.className = "troika-avatar";
+      img.src =
+        avatar ||
+        (role === "user"
+          ? "https://cdn-icons-png.flaticon.com/512/149/149071.png"
+          : "https://cdn-icons-png.flaticon.com/512/4712/4712109.png");
+
+      if (role === "user") {
+        row.appendChild(bubble);
+        row.appendChild(img);
+      } else {
+        row.appendChild(img);
+        row.appendChild(bubble);
+      }
+
+      messages.appendChild(row);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function showTyping() {
+      const typing = document.createElement("div");
+      typing.className = "troika-msg bot";
+      typing.id = "typing-indicator";
+
+      const bubble = document.createElement("div");
+      bubble.className = "troika-bubble typing-indicator";
+      bubble.innerText = "Typing...";
+
+      const img = document.createElement("img");
+      img.className = "troika-avatar";
+      img.src = "https://cdn-icons-png.flaticon.com/512/4712/4712109.png";
+
+      typing.appendChild(img);
+      typing.appendChild(bubble);
+      messages.appendChild(typing);
+      messages.scrollTop = messages.scrollHeight;
+    }
+
+    function removeTyping() {
+      const typing = document.getElementById("typing-indicator");
+      if (typing) typing.remove();
+    }
+
+    async function sendMessage() {
+      const query = input.value.trim();
+      if (!query) return;
+
+      addMessage("user", query);
+      input.value = "";
+      showTyping();
+
+      try {
+        const res = await fetch("http://localhost:5000/api/chat/query", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query, chatbotId, sessionId }),
+        });
+
+        const data = await res.json();
+        removeTyping();
+
+        if (res.ok) {
+          addMessage("bot", data.answer || "(No response)");
+        } else {
+          addMessage("bot", `❌ ${data.message || "Error"}`);
+        }
+      } catch (err) {
+        removeTyping();
+        addMessage("bot", "⚠️ Unable to reach server.");
+      }
+    }
+
+    sendBtn.onclick = sendMessage;
+    input.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") sendMessage();
+    });
+  })();
+</script>
+<!-- End Troika Chatbot -->

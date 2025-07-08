@@ -7,7 +7,16 @@ const contextRoutes = require("./routes/contextRoutes");
 
 dotenv.config();
 const app = express();
-app.use(cors());
+
+const corsOptions = {
+  origin: ["https://troikatech.in", "https://troikatech.ai"],
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+
+
+
 app.use(express.json());
 
 app.use("/api/chat", chatRoutes);

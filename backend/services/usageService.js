@@ -19,27 +19,17 @@ async function checkAndUpdateUsage(chatbotId) {
     throw new Error("Chatbot is disabled");
   }
 
-  // Reset if last used was on a different day
-  let updates = {};
-  if (bot.lastUsedAt !== today) {
-    updates.dailyUsed = 0;
-    updates.lastUsedAt = today;
+  // Check monthly limit only
+  if (bot.monthlyUsed >= bot.monthlyLimit) {
+    throw new Error("Monthly limit exceeded");
   }
 
-  const dailyUsed = updates.dailyUsed ?? bot.dailyUsed;
-  const monthlyUsed = bot.monthlyUsed;
-
-  // Check limits
-  if (dailyUsed >= bot.dailyLimit) throw new Error("Daily limit exceeded");
-  if (monthlyUsed >= bot.monthlyLimit) throw new Error("Monthly limit exceeded");
-
-  // Update usage
-  updates.dailyUsed = dailyUsed + 1;
-  updates.monthlyUsed = monthlyUsed + 1;
-
+  // Always increment monthly usage
   const { error: updateError } = await supabase
     .from("chatbots")
-    .update(updates)
+    .update({
+      monthlyUsed: bot.monthlyUsed + 1,
+    })
     .eq("id", chatbotId);
 
   if (updateError) throw new Error("Failed to update usage");
