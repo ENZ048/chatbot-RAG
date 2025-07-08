@@ -48,9 +48,12 @@ exports.getStats = async (req, res) => {
       .select("*", { count: "exact", head: true });
 
     // 3. Unique users
-    const { count: uniqueUsers } = await supabase
-      .from("users")
-      .select("*", { count: "exact", head: true });
+     const { count: unique_users, error: countError } = await supabase
+    .from("messages")
+    .select("session_id", { count: "exact", head: true })
+    .eq("chatbot_id", chatbotId);
+
+  if (countError) return res.status(500).json({ error: countError.message });
 
     // 4. Total messages
     const { count: totalMessages } = await supabase
@@ -73,7 +76,7 @@ exports.getStats = async (req, res) => {
     res.json({
       totalCompanies,
       totalChatbots,
-      uniqueUsers,
+      unique_users,
       totalMessages,
       monthlyTokenUsage
     });

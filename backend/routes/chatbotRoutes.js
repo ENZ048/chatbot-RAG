@@ -5,7 +5,8 @@ const {
   editChatbot,
   deleteChatbot,
   getAllChatbots,
-  getMessageHistory
+  getMessageHistory,
+  updateTokenLimit
 } = require("../controllers/chatbotCOntroller");
 const adminProtect = require("../middleware/adminAuthMiddleware");
 
@@ -14,5 +15,6 @@ router.put("/edit/:id", adminProtect, editChatbot);
 router.delete("/delete/:id", adminProtect, deleteChatbot);
 router.get("/all", adminProtect, getAllChatbots);
 router.get("/messages/:id", adminProtect, getMessageHistory);
+router.put("/update-token-limit/:id",adminProtect, updateTokenLimit);
 
 module.exports = router;

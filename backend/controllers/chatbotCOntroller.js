@@ -129,3 +129,21 @@ exports.getMessageHistory = async (req, res) => {
     res.status(500).json({ message: "Error fetching message history" });
   }
 };
+
+exports.updateTokenLimit = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { token_limit } = req.body;
+
+    const { data, error } = await supabase
+      .from("chatbots")
+      .update({ token_limit })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    res.json({ message: "Token limit updated", data });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+}
