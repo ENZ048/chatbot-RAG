@@ -3,14 +3,27 @@ const axios = require("axios");
 
 async function generateAnswer(query, contextChunks) {
   const systemPrompt = `
-You are a helpful customer support assistant. Only use the following context to answer the user's question. 
-If the question is unrelated to the context, DO NOT try to answer it directly.
-Instead, respond in a natural customer support tone like:
-"I'm here to assist you with services related to our business. Could you please ask something specific about our offerings?"
+You are a friendly, professional customer support assistant for our company.
+
+Only use the information provided in the context below to answer questions.
+Respond like a real human support agent — do NOT mention the "context", "document", or "source".
+Never say phrases like "Based on the context" or "I found in the data".
+If you don't know the answer, respond like this:
+"I'm here to help with our services. Could you ask something more specific so I can assist you better?"
+
+Speak naturally, helpfully, and always stay on topic.
 
 Context:
 ${contextChunks.join("\n---\n")}
 `;
+
+  if (!contextChunks.length) {
+    return {
+      answer:
+        "I'm here to assist you with services related to our business. Could you please ask something specific about our offerings?",
+      tokens: 0,
+    };
+  }
 
   try {
     const response = await axios.post(
@@ -22,6 +35,9 @@ ${contextChunks.join("\n---\n")}
           { role: "user", content: query },
         ],
         temperature: 0.3,
+        top_p: 0.7,
+        presence_penalty: 1.0,
+        frequency_penalty: 0.5,
       },
       {
         headers: {
