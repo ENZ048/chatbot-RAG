@@ -162,15 +162,16 @@
 }
 
 .troika-suggestion-button {
-  padding: 10px 14px;
-  font-size: 14px;
-  border-radius: 10px;
+  padding: 4px 10px !important;
+  font-size: 12px !important;
+  border-radius: 14px !important;
   border: 1px solid #ddd;
-  background: #fff;
+  background: #f9f9f9;
   cursor: pointer;
-  text-align: left;
-  width: 100%;
+  line-height: 1.2;
+  white-space: nowrap;
 }
+
 
 
 `;
@@ -230,19 +231,21 @@
       const wrapper = document.createElement("div");
       wrapper.style.display = "flex";
       wrapper.style.flexWrap = "wrap";
-      wrapper.style.gap = "6px";
-      wrapper.style.marginTop = "6px";
-      wrapper.style.marginLeft = "40px"; // indent for greeting
+      wrapper.style.gap = "4px";
+      wrapper.style.marginTop = "4px";
+      wrapper.style.marginLeft = "40px";
+      wrapper.style.maxWidth = "80%";
 
       suggestions.forEach((text) => {
         const btn = document.createElement("button");
         btn.innerText = text;
-        btn.style.padding = "6px 12px";
-        btn.style.fontSize = "13px";
-        btn.style.borderRadius = "16px";
+        btn.style.padding = "4px 10px";
+        btn.style.fontSize = "12px";
+        btn.style.borderRadius = "14px";
         btn.style.border = "1px solid #ddd";
-        btn.style.background = "#fff";
+        btn.style.background = "#f9f9f9";
         btn.style.cursor = "pointer";
+        btn.style.lineHeight = "1.2";
         btn.onclick = () => {
           messages.removeChild(wrapper);
           input.value = text;
@@ -277,45 +280,12 @@
       } else {
         row.appendChild(img);
         row.appendChild(bubble);
-
-        // ✅ Attach suggestions under bot message if provided
-        if (Array.isArray(suggestions) && suggestions.length > 0) {
-          const suggContainer = document.createElement("div");
-          suggContainer.style.display = "flex";
-          suggContainer.style.flexDirection = "column"; // Stack vertically
-          suggContainer.style.gap = "8px";
-          suggContainer.style.marginTop = "10px";
-          suggContainer.style.marginLeft = "40px"; // optional indent to align under bot avatar
-
-          suggestions.forEach((text) => {
-            const btn = document.createElement("button");
-            btn.className = "troika-suggestion-button";
-            btn.innerText = text;
-            btn.style.padding = "10px 14px";
-            btn.style.fontSize = "14px";
-            btn.style.borderRadius = "10px";
-            btn.style.border = "1px solid #ddd";
-            btn.style.background = "#fff";
-            btn.style.cursor = "pointer";
-            btn.style.textAlign = "left";
-            btn.style.width = "100%";
-
-            btn.onclick = () => {
-              input.value = text;
-              sendMessage();
-            };
-
-            suggContainer.appendChild(btn);
-          });
-
-          // ✅ Append suggestions as a separate row, not inside the message row
-          messages.appendChild(suggContainer);
-        }
       }
 
       messages.appendChild(row);
 
-      // ✅ Now append suggestion container directly after this message
+      // ✅ Append suggestion container only once
+      // Append suggestion container (compact)
       if (
         role === "bot" &&
         Array.isArray(suggestions) &&
@@ -323,16 +293,21 @@
       ) {
         const suggContainer = document.createElement("div");
         suggContainer.style.display = "flex";
-        suggContainer.style.flexDirection = "column";
-        suggContainer.style.gap = "8px";
-        suggContainer.style.marginTop = "10px";
-        suggContainer.style.marginLeft = "40px";
-        suggContainer.style.marginBottom = "10px";
-        suggContainer.style.width = "calc(100% - 60px)";
+        suggContainer.style.flexWrap = "wrap";
+        suggContainer.style.gap = "4px";
+        suggContainer.style.margin = "8px 0 0 40px";
+        suggContainer.style.maxWidth = "80%";
 
         suggestions.forEach((text) => {
           const btn = document.createElement("button");
           btn.className = "troika-suggestion-button";
+          btn.style.padding = "4px 10px";
+          btn.style.fontSize = "12px";
+          btn.style.borderRadius = "14px";
+          btn.style.border = "1px solid #ddd";
+          btn.style.background = "#f9f9f9";
+          btn.style.cursor = "pointer";
+          btn.style.lineHeight = "1.2";
           btn.innerText = text;
           btn.onclick = () => {
             input.value = text;
