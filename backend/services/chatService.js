@@ -33,7 +33,13 @@ ${contextChunks.join("\n---\n")}
     const mainAnswer = response.data.choices[0].message.content;
 
     // 🔁 Now ask GPT to generate 3 related suggestions:
-    const suggestionPrompt = `Based on the following answer, generate exactly 3 short follow-up suggestions that are under 5 words each. Avoid punctuation. Do NOT include explanations. Return ONLY a JSON array of 3 strings.
+    const suggestionPrompt = `You are a helpful assistant. Based ONLY on the following answer, generate 3 short and highly relevant follow-up prompts or questions. Each should:
+- Be directly related to the answer content.
+- Be no more than 5 words.
+- Avoid punctuation and generic terms.
+- Sound like button labels (e.g., "View pricing", "See portfolio").
+
+Return ONLY a JSON array of 3 strings with no extra text.
 
 Answer: "${mainAnswer}"`;
 
