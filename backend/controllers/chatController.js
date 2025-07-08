@@ -2,12 +2,13 @@
 const { retrieveRelevantChunks } = require("../services/queryService");
 const { generateAnswer } = require("../services/chatService");
 
+
 exports.answerQuery = async (req, res) => {
   try {
     const { query, chatbotId } = req.body;
 
-    if (!query || query.length < 5) {
-      return res.status(400).json({ message: "Query too short or missing." });
+    if (!query) {
+      return res.status(400).json({ message: "Please ask anything" });
     }
 
     const chunks = await retrieveRelevantChunks(query, chatbotId);

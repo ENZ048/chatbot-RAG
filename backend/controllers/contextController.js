@@ -1,7 +1,7 @@
 // controllers/contextController.js
 const extractTextFromFile = require("../utils/extractTextFromFile");
 const chunkText = require("../utils/chunkText");
-const { storeContextChunk } = require("../services/contextService");
+const { storeContextChunks } = require("../services/contextService");
 
 exports.uploadContextFile = async (req, res) => {
   try {
@@ -16,17 +16,12 @@ exports.uploadContextFile = async (req, res) => {
     const text = await extractTextFromFile(file.buffer, ext);
 
     const chunks = chunkText(text, 300, 50);
-    const results = [];
-
-    for (const chunk of chunks) {
-      const saved = await storeContextChunk(chunk, chatbotId);
-      results.push(saved);
-    }
+    const results = await storeContextChunks(chunks, chatbotId);
 
     res.status(201).json({
       message: "File uploaded and embeddings stored",
       chunksStored: results.length,
-      data: results.flat(),
+      data: results,
     });
   } catch (error) {
     console.error("Upload file error:", error.message);
