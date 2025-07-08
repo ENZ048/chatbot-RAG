@@ -95,14 +95,17 @@ exports.getAllChatbotsWithStats = async (req, res) => {
 
     const enriched = await Promise.all(
       chatbots.map(async (bot) => {
-        // Count unique users (distinct session_id)
-        const { count: uniqueUsers } = await supabase
+        // Get all messages for chatbot
+        const { data: messages, error: msgErr } = await supabase
           .from("messages")
-          .select("session_id", { count: "exact", head: true })
-          .eq("chatbot_id", bot.id)
-          .distinct("session_id");
+          .select("session_id")
+          .eq("chatbot_id", bot.id);
 
-        // Count total messages
+        if (msgErr) throw msgErr;
+
+        const uniqueSessions = new Set(messages.map(m => m.session_id));
+        const uniqueUsers = uniqueSessions.size;
+
         const { count: totalMessages } = await supabase
           .from("messages")
           .select("*", { count: "exact", head: true })
@@ -110,7 +113,7 @@ exports.getAllChatbotsWithStats = async (req, res) => {
 
         return {
           ...bot,
-          unique_users: uniqueUsers || 0,
+          unique_users: uniqueUsers,
           total_messages: totalMessages || 0,
           used_tokens: bot.used_tokens || 0,
           token_limit: bot.token_limit || null,
@@ -125,6 +128,7 @@ exports.getAllChatbotsWithStats = async (req, res) => {
     res.status(500).json({ message: "Error fetching chatbots" });
   }
 };
+
 
 
 
