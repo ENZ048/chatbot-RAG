@@ -4,7 +4,8 @@ const {
   createChatbot,
   editChatbot,
   deleteChatbot,
-  getAllChatbots
+  getAllChatbots,
+  getMessageHistory
 } = require("../controllers/chatbotCOntroller");
 const adminProtect = require("../middleware/adminAuthMiddleware");
 
