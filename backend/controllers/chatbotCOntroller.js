@@ -115,24 +115,44 @@ exports.getAllChatbotsWithStats = async (req, res) => {
 };
 
 
-exports.getMessageHistory = async (req, res) => {
-  const { id } = req.params;
-
+exports.getAllChatbotsWithStats = async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from("messages") // or whatever your table is called
-      .select("*")
-      .eq("chatbot_id", id)
-      .order("timestamp", { ascending: false });
-
+    const { data: chatbots, error } = await supabase.from("chatbots").select("*");
     if (error) throw error;
 
-    res.status(200).json({ messages: data });
+    const enriched = await Promise.all(
+      chatbots.map(async (bot) => {
+        // Count unique users (distinct session_id)
+        const { count: uniqueUsers } = await supabase
+          .from("messages")
+          .select("session_id", { count: "exact", head: true })
+          .eq("chatbot_id", bot.id)
+          .distinct("session_id");
+
+        // Count total messages
+        const { count: totalMessages } = await supabase
+          .from("messages")
+          .select("*", { count: "exact", head: true })
+          .eq("chatbot_id", bot.id);
+
+        return {
+          ...bot,
+          unique_users: uniqueUsers || 0,
+          total_messages: totalMessages || 0,
+          used_tokens: bot.used_tokens || 0,
+          token_limit: bot.token_limit || null,
+          last_reset: bot.last_reset || null,
+        };
+      })
+    );
+
+    res.json({ chatbots: enriched });
   } catch (err) {
-    console.error("Fetch messages error:", err.message);
-    res.status(500).json({ message: "Error fetching message history" });
+    console.error("Error in getAllChatbotsWithStats:", err);
+    res.status(500).json({ message: "Error fetching chatbots" });
   }
 };
+
 
 exports.updateTokenLimit = async (req, res) => {
   try {
