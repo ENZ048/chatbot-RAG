@@ -33,7 +33,9 @@ ${contextChunks.join("\n---\n")}
     const mainAnswer = response.data.choices[0].message.content;
 
     // 🔁 Now ask GPT to generate 3 related suggestions:
-    const suggestionPrompt = `Based on this answer: "${mainAnswer}",  Generate 3 short, concise follow-up questions related to the answer. Each should be under 12 words. Respond as a JSON array of strings.`;
+    const suggestionPrompt = `Based on the following answer, generate exactly 3 short follow-up questions related to it. Keep each under 10 words. Return ONLY a JSON array of 3 strings. Do NOT include explanations.
+
+Answer: "${mainAnswer}"`;
 
     const suggestionResponse = await axios.post(
       "https://api.openai.com/v1/chat/completions",
@@ -60,12 +62,16 @@ ${contextChunks.join("\n---\n")}
       suggestions = [];
     }
 
+    if (suggestions.length > 3) {
+      suggestions = suggestions.slice(0, 3);
+    }
+
     return {
       answer: mainAnswer,
       suggestions,
       tokens:
         response.data.usage.total_tokens +
-        suggestionResponse.data.usage?.total_tokens || 0,
+          suggestionResponse.data.usage?.total_tokens || 0,
     };
   } catch (error) {
     console.error(
