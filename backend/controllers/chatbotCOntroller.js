@@ -88,28 +88,32 @@ exports.deleteChatbot = async (req, res) => {
   }
 };
 
-exports.getAllChatbots = async (req, res) => {
+exports.getAllChatbotsWithStats = async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from("chatbots")
-      .select("*, companies(name, url)")
-      .order("created_at", { ascending: false });
-
+    const { data: chatbots, error } = await supabase.from("chatbots").select("*");
     if (error) throw error;
 
-    // Format the data to flatten company fields
-    const formatted = data.map((cb) => ({
-      ...cb,
-      company_name: cb.companies?.name || "N/A",
-      company_url: cb.companies?.url || "N/A",
+    const enriched = await Promise.all(chatbots.map(async (bot) => {
+      const { count: uniqueUsers } = await supabase
+        .from("messages")
+        .select("session_id", { count: "exact", head: true })
+        .eq("chatbot_id", bot.id);
+
+      return {
+        ...bot,
+        unique_users: uniqueUsers || 0,
+        used_tokens: bot.used_tokens || 0,
+        token_limit: bot.token_limit || null,
+        last_reset: bot.last_reset || null,
+      };
     }));
 
-    res.status(200).json({ chatbots: formatted });
+    res.json({ chatbots: enriched });
   } catch (err) {
-    console.error("Error fetching chatbots:", err.message);
-    res.status(500).json({ message: "Failed to fetch chatbots" });
+    res.status(500).json({ message: "Error fetching chatbots" });
   }
 };
+
 
 exports.getMessageHistory = async (req, res) => {
   const { id } = req.params;
