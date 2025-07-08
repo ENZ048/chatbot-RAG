@@ -110,3 +110,22 @@ exports.getAllChatbots = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch chatbots" });
   }
 };
+
+exports.getMessageHistory = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const { data, error } = await supabase
+      .from("messages") // or whatever your table is called
+      .select("*")
+      .eq("chatbot_id", id)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    res.status(200).json({ messages: data });
+  } catch (err) {
+    console.error("Fetch messages error:", err.message);
+    res.status(500).json({ message: "Error fetching message history" });
+  }
+};
