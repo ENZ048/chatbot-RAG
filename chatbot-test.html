@@ -160,6 +160,19 @@
   white-space: normal !important;
   word-wrap: break-word;
 }
+
+.troika-suggestion-button {
+  padding: 10px 14px;
+  font-size: 14px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+
 `;
 
     const style = document.createElement("style");
@@ -218,7 +231,8 @@
       wrapper.style.display = "flex";
       wrapper.style.flexWrap = "wrap";
       wrapper.style.gap = "6px";
-      wrapper.style.marginTop = "4px";
+      wrapper.style.marginTop = "6px";
+      wrapper.style.marginLeft = "40px"; // indent for greeting
 
       suggestions.forEach((text) => {
         const btn = document.createElement("button");
@@ -229,7 +243,6 @@
         btn.style.border = "1px solid #ddd";
         btn.style.background = "#fff";
         btn.style.cursor = "pointer";
-        btn.style.transition = "all 0.2s";
         btn.onclick = () => {
           messages.removeChild(wrapper);
           input.value = text;
@@ -269,31 +282,68 @@
         if (Array.isArray(suggestions) && suggestions.length > 0) {
           const suggContainer = document.createElement("div");
           suggContainer.style.display = "flex";
-          suggContainer.style.flexWrap = "wrap";
-          suggContainer.style.gap = "6px";
-          suggContainer.style.marginTop = "6px";
+          suggContainer.style.flexDirection = "column"; // Stack vertically
+          suggContainer.style.gap = "8px";
+          suggContainer.style.marginTop = "10px";
+          suggContainer.style.marginLeft = "40px"; // optional indent to align under bot avatar
 
           suggestions.forEach((text) => {
             const btn = document.createElement("button");
+            btn.className = "troika-suggestion-button";
             btn.innerText = text;
-            btn.style.padding = "6px 12px";
-            btn.style.fontSize = "13px";
-            btn.style.borderRadius = "16px";
+            btn.style.padding = "10px 14px";
+            btn.style.fontSize = "14px";
+            btn.style.borderRadius = "10px";
             btn.style.border = "1px solid #ddd";
             btn.style.background = "#fff";
             btn.style.cursor = "pointer";
+            btn.style.textAlign = "left";
+            btn.style.width = "100%";
+
             btn.onclick = () => {
               input.value = text;
               sendMessage();
             };
+
             suggContainer.appendChild(btn);
           });
 
-          row.appendChild(suggContainer);
+          // ✅ Append suggestions as a separate row, not inside the message row
+          messages.appendChild(suggContainer);
         }
       }
 
       messages.appendChild(row);
+
+      // ✅ Now append suggestion container directly after this message
+      if (
+        role === "bot" &&
+        Array.isArray(suggestions) &&
+        suggestions.length > 0
+      ) {
+        const suggContainer = document.createElement("div");
+        suggContainer.style.display = "flex";
+        suggContainer.style.flexDirection = "column";
+        suggContainer.style.gap = "8px";
+        suggContainer.style.marginTop = "10px";
+        suggContainer.style.marginLeft = "40px";
+        suggContainer.style.marginBottom = "10px";
+        suggContainer.style.width = "calc(100% - 60px)";
+
+        suggestions.forEach((text) => {
+          const btn = document.createElement("button");
+          btn.className = "troika-suggestion-button";
+          btn.innerText = text;
+          btn.onclick = () => {
+            input.value = text;
+            sendMessage();
+          };
+          suggContainer.appendChild(btn);
+        });
+
+        messages.appendChild(suggContainer);
+      }
+
       messages.scrollTop = messages.scrollHeight;
     }
 
@@ -349,9 +399,6 @@
             null,
             data.suggestions || []
           );
-          if (Array.isArray(data.suggestions) && data.suggestions.length > 0) {
-            showSuggestions(data.suggestions);
-          }
         } else {
           addMessage("bot", `❌ ${data.message || "Error"}`);
         }

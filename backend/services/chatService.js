@@ -33,7 +33,7 @@ ${contextChunks.join("\n---\n")}
     const mainAnswer = response.data.choices[0].message.content;
 
     // 🔁 Now ask GPT to generate 3 related suggestions:
-    const suggestionPrompt = `Based on the following answer, generate exactly 3 short follow-up questions related to it. Keep each under 10 words. Return ONLY a JSON array of 3 strings. Do NOT include explanations.
+    const suggestionPrompt = `Based on the following answer, generate exactly 3 short follow-up suggestions that are under 5 words each. Avoid punctuation. Do NOT include explanations. Return ONLY a JSON array of 3 strings.
 
 Answer: "${mainAnswer}"`;
 
