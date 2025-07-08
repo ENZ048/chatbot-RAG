@@ -28,6 +28,9 @@ app.use("/api/chatbot", chatbotRoutes);
 const adminRoutes = require("./routes/adminRoutes");
 app.use("/api/admin", adminRoutes);
 
+const companyRoutes = require("./routes/companyRoutes");
+app.use("/api/company", companyRoutes);
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

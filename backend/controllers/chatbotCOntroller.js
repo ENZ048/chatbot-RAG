@@ -3,26 +3,39 @@ const supabase = require("../supabase/client");
 // 🟢 CREATE chatbot (admin-only)
 exports.createChatbot = async (req, res) => {
   try {
+    console.log("Create Chatbot request body:", req.body);
+
     const { companyId, name } = req.body;
 
     if (!companyId || !name) {
       return res.status(400).json({ message: "companyId and chatbot name are required." });
     }
 
-    // Optional: check if company exists
-    const companyCheck = await supabase
+    // ✅ Fetch company details
+    const { data: companyData, error: companyError } = await supabase
       .from("companies")
-      .select("id")
+      .select("id, name, url")
       .eq("id", companyId)
       .maybeSingle();
 
-    if (!companyCheck.data) {
+    if (companyError) throw companyError;
+    if (!companyData) {
       return res.status(404).json({ message: "Company not found." });
     }
 
+    const { name: companyName, url: companyUrl } = companyData;
+
+    // ✅ Insert chatbot with all required fields
     const { data, error } = await supabase
       .from("chatbots")
-      .insert([{ company_id: companyId, name }])
+      .insert([
+        {
+          company_id: companyId,
+          company_name: companyName,
+          company_url: companyUrl,
+          name,
+        },
+      ])
       .select("*");
 
     if (error) throw error;
@@ -33,6 +46,7 @@ exports.createChatbot = async (req, res) => {
     res.status(500).json({ message: "Server error while creating chatbot" });
   }
 };
+
 
 // ✏️ EDIT chatbot
 exports.editChatbot = async (req, res) => {
