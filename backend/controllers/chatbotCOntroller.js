@@ -88,32 +88,6 @@ exports.deleteChatbot = async (req, res) => {
   }
 };
 
-exports.getAllChatbotsWithStats = async (req, res) => {
-  try {
-    const { data: chatbots, error } = await supabase.from("chatbots").select("*");
-    if (error) throw error;
-
-    const enriched = await Promise.all(chatbots.map(async (bot) => {
-      const { count: uniqueUsers } = await supabase
-        .from("messages")
-        .select("session_id", { count: "exact", head: true })
-        .eq("chatbot_id", bot.id);
-
-      return {
-        ...bot,
-        unique_users: uniqueUsers || 0,
-        used_tokens: bot.used_tokens || 0,
-        token_limit: bot.token_limit || null,
-        last_reset: bot.last_reset || null,
-      };
-    }));
-
-    res.json({ chatbots: enriched });
-  } catch (err) {
-    res.status(500).json({ message: "Error fetching chatbots" });
-  }
-};
-
 
 exports.getAllChatbotsWithStats = async (req, res) => {
   try {
