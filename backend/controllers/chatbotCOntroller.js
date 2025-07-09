@@ -190,7 +190,7 @@ exports.fetchChatbotsWithStats = async () => {
 
       const { data: history, error: historyErr } = await supabase
         .from("messages")
-        .select("role, content, created_at")
+        .select("sender, content")
         .eq("chatbot_id", bot.id)
         .order("created_at", { ascending: false })
         .limit(100); // latest 10 messages

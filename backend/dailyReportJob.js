@@ -1,7 +1,7 @@
 const cron = require("node-cron");
-const { fetchChatbotsWithStats } = require("../controllers/chatbotCOntroller");
+const { fetchChatbotsWithStats } = require("./controllers/chatbotCOntroller");
 const generatePDFBuffer = require("./pdf/generatePDFBuffer");
-const sendEmailWithPDF = require("./email/sendEmailWithPDF");
+const sendEmailWithPDF = require("./pdf/sendEmailWithPDF");
 
 // ⏰ Schedule at 12 PM IST = 6 AM UTC
 cron.schedule("0 6 * * *", async () => {
@@ -59,46 +59,56 @@ cron.schedule("0 6 * * *", async () => {
 });
 
 (async () => {
-  console.log("🔧 Running manual PDF report job...");
+  try {
+    console.log("🔧 Running manual PDF report job...");
 
-  const chatbots = await fetchChatbotsWithStats();
+    const chatbots = await fetchChatbotsWithStats();
 
-  const grouped = {};
-  for (const bot of chatbots) {
-    if (!bot.company_email) continue;
-    if (!grouped[bot.company_email]) grouped[bot.company_email] = [];
-    grouped[bot.company_email].push(bot);
-  }
-
-  for (const [email, bots] of Object.entries(grouped)) {
-    for (const bot of bots) {
-      const tokenLimit =
-        typeof bot.token_limit === "number" ? bot.token_limit : 0;
-      const usedTokens = bot.used_tokens || 0;
-      const remainingTokens =
-        tokenLimit > 0 ? Math.max(tokenLimit - usedTokens, 0) : 0;
-
-      const pdfBuffer = await generatePDFBuffer({
-        name: bot.name,
-        companyName: bot.company_name,
-        domain: bot.company_url,
-        usedTokens,
-        remainingTokens,
-        tokenLimit: bot.token_limit || "Unlimited",
-        totalMessages: bot.total_messages,
-        uniqueUsers: bot.unique_users,
-        messageHistory: bot.message_history || [],
-        chartURL: getTokenChartImageURL(usedTokens, remainingTokens), // if using chart image
-      });
-
-      await sendEmailWithPDF(
-        email,
-        `📊 Daily Chatbot Report - ${bot.name} (Manual Test)`,
-        pdfBuffer,
-        bot.name
-      );
-
-      console.log(`✅ Test report sent to ${email}`);
+    const grouped = {};
+    for (const bot of chatbots) {
+      if (!bot.company_email) continue;
+      if (!grouped[bot.company_email]) grouped[bot.company_email] = [];
+      grouped[bot.company_email].push(bot);
     }
+
+    for (const [email, bots] of Object.entries(grouped)) {
+      for (const bot of bots) {
+        try {
+          const tokenLimit =
+            typeof bot.token_limit === "number" ? bot.token_limit : 0;
+          const usedTokens = bot.used_tokens || 0;
+          const remainingTokens =
+            tokenLimit > 0 ? Math.max(tokenLimit - usedTokens, 0) : 0;
+
+          const pdfBuffer = await generatePDFBuffer({
+            name: bot.name,
+            companyName: bot.company_name,
+            domain: bot.company_url,
+            usedTokens,
+            remainingTokens,
+            tokenLimit: bot.token_limit || "Unlimited",
+            totalMessages: bot.total_messages,
+            uniqueUsers: bot.unique_users,
+            messageHistory: bot.message_history || [],
+          });
+
+          await sendEmailWithPDF(
+            email,
+            `📊 Daily Chatbot Report - ${bot.name} (Manual Test)`,
+            pdfBuffer,
+            bot.name
+          );
+
+          console.log(`✅ Test report sent to ${email}`);
+        } catch (innerErr) {
+          console.error(
+            `❌ Failed to process bot "${bot.name}" for ${email}:`,
+            innerErr
+          );
+        }
+      }
+    }
+  } catch (err) {
+    console.error("❌ Top-level error in manual job:", err);
   }
 })();

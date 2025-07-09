@@ -7,4 +7,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE // For inserting/searching vectors
 );
 
+console.log("Loaded URL:", process.env.SUPABASE_URL);
+
+
 module.exports = supabase;

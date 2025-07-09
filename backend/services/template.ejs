@@ -78,7 +78,7 @@
       <ul>
         <% messageHistory.forEach(msg => { %>
         <li>
-          <strong>[<%= msg.role === 'user' ? 'User' : 'Bot' %>]</strong>: <%=
+          <strong>[<%= msg.sender === 'user' ? 'User' : 'Bot' %>]</strong>: <%=
           msg.content %>
         </li>
         <% }) %>
@@ -88,28 +88,30 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        const ctx = document.getElementById('tokenPie');
+      const ctx = document.getElementById("tokenPie");
 
-        const used = usedTokens;
-        const remaining = remainingTokens;
-        
-          new Chart(ctx, {
-            type: 'pie',
-            data: {
-              labels: ['Tokens Consumed', 'Tokens Remaining'],
-              datasets: [{
-                data: [used, remaining],
-                backgroundColor: ['#F44336', '#4CAF50'],
-              }]
+      const used = usedTokens;
+      const remaining = remainingTokens;
+
+      new Chart(ctx, {
+        type: "pie",
+        data: {
+          labels: ["Tokens Consumed", "Tokens Remaining"],
+          datasets: [
+            {
+              data: [used, remaining],
+              backgroundColor: ["#F44336", "#4CAF50"],
             },
-            options: {
-              plugins: {
-                legend: {
-                  position: 'bottom'
-                }
-              }
-            }
-          });
+          ],
+        },
+        options: {
+          plugins: {
+            legend: {
+              position: "bottom",
+            },
+          },
+        },
+      });
     </script>
   </body>
 </html>
