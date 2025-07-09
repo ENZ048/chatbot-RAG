@@ -6,5 +6,14 @@ const { login, getStats, createAdmin } = require("../controllers/adminController
 router.post("/login", login);
 router.get("/stats", getStats);
 router.post('/create', createAdmin);
+router.get("/all", async (req, res) => {
+  const { data, error } = await supabase
+    .from("admins")
+    .select("id, name, email, created_at")
+    .order("created_at", { ascending: false });
+
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ success: true, admins: data });
+});
 
 module.exports = router;
