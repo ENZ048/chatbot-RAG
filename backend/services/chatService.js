@@ -1,6 +1,22 @@
 const axios = require("axios");
 
 async function generateAnswer(query, contextChunks) {
+  // 👇 Check for demo-related intent
+  const lowerQuery = query.toLowerCase();
+  const demoKeywords = ["demo", "free trial", "try it", "sample", "test it"];
+  const isDemoRequest = demoKeywords.some((word) => lowerQuery.includes(word));
+
+  if (isDemoRequest) {
+    const demoMessage = `Absolutely! You can try a free demo by filling out the contact form here: [https://troikatech.net/ai-website-design-company-in-mumbai/](https://troikatech.net/ai-website-design-company-in-mumbai/)`;
+
+    return {
+      answer: demoMessage,
+      suggestions: ["Fill contact form", "View demo page", "Get started"],
+      tokens: 0,
+    };
+  }
+
+  // 🔁 Proceed with regular OpenAI-based generation
   const systemPrompt = `
 You are a professional customer support assistant for our company.
 
@@ -32,7 +48,7 @@ ${contextChunks.join("\n---\n")}
 
     const mainAnswer = response.data.choices[0].message.content;
 
-    // 🔁 Now ask GPT to generate 3 related suggestions:
+    // 🔁 Generate follow-up suggestions
     const suggestionPrompt = `You are a helpful assistant. Based ONLY on the following answer, generate 3 short and highly relevant follow-up prompts or questions. Each should:
 - Be directly related to the answer content.
 - Be no more than 5 words.
@@ -77,7 +93,7 @@ Answer: "${mainAnswer}"`;
       suggestions,
       tokens:
         response.data.usage.total_tokens +
-          suggestionResponse.data.usage?.total_tokens || 0,
+        suggestionResponse.data.usage?.total_tokens || 0,
     };
   } catch (error) {
     console.error(
@@ -92,6 +108,7 @@ Answer: "${mainAnswer}"`;
     };
   }
 }
+
 
 function generateSuggestions(rawSuggestions) {
   const maxLength = 80; // Max characters per suggestion
