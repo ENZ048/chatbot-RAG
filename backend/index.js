@@ -14,7 +14,8 @@ const corsOptions = {
     "http://localhost:5173",
     "https://aiwebdesigncompany.com",
     "https://blog.aiwebdesigncompany.com",
-    "https://chatbot-dashboard-alpha.vercel.app"
+    "https://chatbot-dashboard-alpha.vercel.app",
+    "https://troikatech.net",
   ],
   credentials: true,
 };
