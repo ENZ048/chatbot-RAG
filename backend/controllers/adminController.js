@@ -17,16 +17,19 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: "Invalid email or password" });
     }
 
-    const token = jwt.sign({ id: admin.id, email: admin.email, isAdmin: true }, process.env.JWT_SECRET, {
-      expiresIn: "8h",
-    });
+    const token = jwt.sign(
+      { id: admin.id, email: admin.email, isAdmin: true },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: "8h",
+      }
+    );
 
     console.log("🔐 Generated token payload:", {
       id: admin.id,
       email: admin.email,
-      isAdmin: true
+      isAdmin: true,
     });
-
 
     res.json({ token });
   } catch (err) {
@@ -54,7 +57,7 @@ exports.getStats = async (req, res) => {
 
     if (sessionError) throw sessionError;
 
-    const sessionIds = new Set(sessions.map(msg => msg.session_id));
+    const sessionIds = new Set(sessions.map((msg) => msg.session_id));
     const unique_users = sessionIds.size;
 
     // 4. Total messages
@@ -85,5 +88,66 @@ exports.getStats = async (req, res) => {
   } catch (error) {
     console.error("Error fetching stats:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+exports.createAdmin = async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    // Basic validation
+    if (!name || !email || !password) {
+      return res
+        .status(400)
+        .json({ error: "Name, email, and password are required." });
+    }
+
+    // Check if email already exists
+    const { data: existingAdmin, error: checkError } = await supabase
+      .from("admins")
+      .select("id")
+      .eq("email", email.toLowerCase())
+      .single();
+
+    if (existingAdmin) {
+      return res
+        .status(400)
+        .json({ error: "Admin with this email already exists." });
+    }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Insert admin (id will be auto-generated)
+    const { data, error } = await supabase
+      .from("admins")
+      .insert([
+        {
+          name,
+          email: email.toLowerCase(),
+          password_hash: hashedPassword,
+          created_at: new Date().toISOString(),
+        },
+      ])
+      .select(); // Return inserted row
+
+    if (error) {
+      console.error("Supabase insert error:", error.message);
+      return res.status(500).json({ error: "Failed to create admin" });
+    }
+
+    // Success
+    return res.status(201).json({
+      success: true,
+      admin: {
+        id: data[0].id,
+        name: data[0].name,
+        email: data[0].email,
+        created_at: data[0].created_at,
+      },
+    });
+  } catch (err) {
+    console.error("CreateAdmin error:", err);
+    return res.status(500).json({ error: "Server error" });
   }
 };
