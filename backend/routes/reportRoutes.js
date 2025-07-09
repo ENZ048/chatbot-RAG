@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const { runDailyReportJob } = require("../services/dailyReportRunner");
 const supabase = require("../supabase/client");
+const {generatePDFBuffer} = require("../pdf/generatePDFBuffer");
 
 router.post("/send", async (req, res) => {
   try {
