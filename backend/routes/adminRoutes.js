@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { login, getStats, createAdmin } = require("../controllers/adminController");
+const supabase = require("../supabase/client");
 
 
 router.post("/login", login);
