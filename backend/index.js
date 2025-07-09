@@ -4,18 +4,22 @@ const dotenv = require("dotenv");
 const chatRoutes = require("./routes/chatRoutes");
 const contextRoutes = require("./routes/contextRoutes");
 
-
 dotenv.config();
 const app = express();
 
 const corsOptions = {
-  origin: ["https://troikatech.in", "https://troikatech.ai", "http://localhost:5173", "https://aiwebdesigncompany.com", "https://blog.aiwebdesigncompany.com"],
+  origin: [
+    "https://troikatech.in",
+    "https://troikatech.ai",
+    "http://localhost:5173",
+    "https://aiwebdesigncompany.com",
+    "https://blog.aiwebdesigncompany.com",
+    "https://chatbot-dashboard-alpha.vercel.app"
+  ],
   credentials: true,
 };
 
 app.use(cors(corsOptions));
-
-
 
 app.use(express.json());
 
@@ -33,7 +37,6 @@ app.use("/api/company", companyRoutes);
 
 const reportRoutes = require("./routes/reportRoutes");
 app.use("/api/report", reportRoutes);
-
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
