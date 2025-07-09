@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 const { runDailyReportJob } = require("../services/dailyReportRunner");
 const supabase = require("../supabase/client");
-const {generatePDFBuffer} = require("../pdf/generatePDFBuffer");
+const generatePDFBuffer = require("../pdf/generatePDFBuffer");
+const QuickChart = require("quickchart-js");
 
 router.post("/send", async (req, res) => {
   try {
@@ -13,6 +14,23 @@ router.post("/send", async (req, res) => {
     res.status(500).json({ error: err.message || "Internal Server Error" });
   }
 });
+
+function getTokenChartImageURL(usedTokens, remainingTokens) {
+  const qc = new QuickChart();
+  qc.setConfig({
+    type: 'pie',
+    data: {
+      labels: ['Tokens Consumed', 'Tokens Remaining'],
+      datasets: [{
+        data: [usedTokens, remainingTokens],
+        backgroundColor: ['#F44336', '#4CAF50'],
+      }]
+    },
+    options: { plugins: { legend: { position: 'bottom' } } }
+  });
+  qc.setWidth(400).setHeight(400);
+  return qc.getUrl();
+}
 
 router.get("/download/:id", async (req, res) => {
   try {
@@ -37,23 +55,25 @@ router.get("/download/:id", async (req, res) => {
       .single();
 
     // 3. Fetch all messages for chatbot
-    const { data: messages, error: msgErr } = await supabase
+    const { data: messageHistory, error: msgErr } = await supabase
       .from("messages")
       .select("*")
       .eq("chatbot_id", chatbotId)
       .order("timestamp", { ascending: true });
 
     // 4. Calculate stats
-    const totalMessages = messages.length;
-    const uniqueUsers = new Set(messages.map((m) => m.sender)).size;
+    const totalMessages = messageHistory.length;
+    const uniqueUsers = new Set(messageHistory.map((m) => m.sender)).size;
     const remainingTokens =
       chatbot.token_limit != null && chatbot.used_tokens != null
         ? Math.max(chatbot.token_limit - chatbot.used_tokens, 0)
         : "Unlimited";
 
+    const chartURL = getTokenChartImageURL(chatbot.used_tokens, remainingTokens);
+
     const reportData = {
       name: chatbot.name,
-      company: company?.name || chatbot.company_name || "N/A",
+      companyName: company?.name || chatbot.company_name || "N/A",
       domain: chatbot.company_url,
       tokenLimit: chatbot.token_limit,
       usedTokens: chatbot.used_tokens,
@@ -61,7 +81,8 @@ router.get("/download/:id", async (req, res) => {
       totalMessages,
       uniqueUsers,
       generatedAt: new Date().toLocaleString(),
-      messages,
+      messageHistory,
+      chartURL
     };
 
     const pdfBuffer = await generatePDFBuffer(reportData);
