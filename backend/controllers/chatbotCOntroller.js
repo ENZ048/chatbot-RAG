@@ -8,7 +8,9 @@ exports.createChatbot = async (req, res) => {
     const { companyId, name } = req.body;
 
     if (!companyId || !name) {
-      return res.status(400).json({ message: "companyId and chatbot name are required." });
+      return res
+        .status(400)
+        .json({ message: "companyId and chatbot name are required." });
     }
 
     // ✅ Fetch company details
@@ -46,7 +48,6 @@ exports.createChatbot = async (req, res) => {
     res.status(500).json({ message: "Server error while creating chatbot" });
   }
 };
-
 
 // ✏️ EDIT chatbot
 exports.editChatbot = async (req, res) => {
@@ -90,7 +91,9 @@ exports.deleteChatbot = async (req, res) => {
 
 exports.getAllChatbotsWithStats = async (req, res) => {
   try {
-    const { data: chatbots, error } = await supabase.from("chatbots").select("*");
+    const { data: chatbots, error } = await supabase
+      .from("chatbots")
+      .select("*");
     if (error) throw error;
 
     const enriched = await Promise.all(
@@ -103,7 +106,7 @@ exports.getAllChatbotsWithStats = async (req, res) => {
 
         if (msgErr) throw msgErr;
 
-        const uniqueSessions = new Set(messages.map(m => m.session_id));
+        const uniqueSessions = new Set(messages.map((m) => m.session_id));
         const uniqueUsers = uniqueSessions.size;
 
         const { count: totalMessages } = await supabase
@@ -128,9 +131,6 @@ exports.getAllChatbotsWithStats = async (req, res) => {
     res.status(500).json({ message: "Error fetching chatbots" });
   }
 };
-
-
-
 
 exports.getMessageHistory = async (req, res) => {
   const { id } = req.params;
@@ -167,4 +167,56 @@ exports.updateTokenLimit = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-}
+};
+
+exports.fetchChatbotsWithStats = async () => {
+  const { data: chatbots, error } = await supabase.from("chatbots").select(`
+      *,
+      company:company_id (
+        name,
+        email
+      )
+    `);
+
+  if (error) throw error;
+
+  const enriched = await Promise.all(
+    chatbots.map(async (bot) => {
+      const { data: messages, error: msgErr } = await supabase
+        .from("messages")
+        .select("session_id")
+        .eq("chatbot_id", bot.id);
+      if (msgErr) throw msgErr;
+
+      const { data: history, error: historyErr } = await supabase
+        .from("messages")
+        .select("role, content, created_at")
+        .eq("chatbot_id", bot.id)
+        .order("created_at", { ascending: false })
+        .limit(100); // latest 10 messages
+
+      if (historyErr) throw historyErr;
+
+      const uniqueSessions = new Set(messages.map((m) => m.session_id));
+      const uniqueUsers = uniqueSessions.size;
+
+      const { count: totalMessages } = await supabase
+        .from("messages")
+        .select("*", { count: "exact", head: true })
+        .eq("chatbot_id", bot.id);
+
+      return {
+        ...bot,
+        unique_users: uniqueUsers,
+        total_messages: totalMessages || 0,
+        used_tokens: bot.used_tokens || 0,
+        token_limit: bot.token_limit || null,
+        company_email: bot.company?.email || null,
+        company_name: bot.company?.name || null,
+        message_history: history || [],
+      };
+    })
+  );
+
+  return enriched;
+};
