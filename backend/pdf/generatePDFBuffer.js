@@ -5,7 +5,7 @@ const puppeteer = require("puppeteer");
 const generatePDFBuffer = async (data) => {
   const html = await ejs.renderFile(
     path.join(__dirname, "template.ejs"),
-    { data }
+    data
   );
 
   const browser = await puppeteer.launch({
@@ -15,10 +15,6 @@ const generatePDFBuffer = async (data) => {
 
   const page = await browser.newPage();
   await page.setContent(html, { waitUntil: "networkidle0" });
-
-  // Wait for chart to render (important for Chart.js)
-  await page.waitForSelector("#tokenPie");
-  await page.waitForTimeout(1000);
 
   const pdfBuffer = await page.pdf({
     format: "A4",

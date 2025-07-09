@@ -192,7 +192,7 @@ exports.fetchChatbotsWithStats = async () => {
         .from("messages")
         .select("sender, content")
         .eq("chatbot_id", bot.id)
-        .order("created_at", { ascending: false })
+        .order("timestamp", { ascending: false }) 
         .limit(100); // latest 10 messages
 
       if (historyErr) throw historyErr;
