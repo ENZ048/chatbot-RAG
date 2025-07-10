@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const supabase = require('../supabaseClient');
+const supabase = require('../supabase/client');
 
 router.get('/:clientId', async (req, res) => {
   const { clientId } = req.params;
@@ -18,3 +18,5 @@ router.get('/:clientId', async (req, res) => {
 
   return res.json(subscription);
 });
+
+module.exports = router;

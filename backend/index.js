@@ -43,7 +43,7 @@ const otpRoutes = require("./routes/otpRoutes");
 app.use("/api", otpRoutes);
 
 const planRoutes = require("./routes/planRoutes");
-app.use("/api", planRoutes);
+app.use("/api/plans", planRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
