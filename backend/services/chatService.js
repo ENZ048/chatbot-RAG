@@ -7,7 +7,7 @@ async function generateAnswer(query, contextChunks) {
   const isDemoRequest = demoKeywords.some((word) => lowerQuery.includes(word));
 
   if (isDemoRequest) {
-    const demoMessage = `Absolutely! You can try a free demo by filling out the contact form here: [https://troikatech.net/ai-website-design-company-in-mumbai/](https://troikatech.net/ai-website-design-company-in-mumbai/)`;
+    const demoMessage = `Absolutely! You can try a free demo by filling out the contact form here: [Free Demo](https://troikatech.net/ai-website-design-company-in-mumbai/)`;
 
     return {
       answer: demoMessage,
