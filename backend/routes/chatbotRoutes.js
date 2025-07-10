@@ -34,4 +34,39 @@ router.get("/:id/subscription", async (req, res) => {
   res.json({ subscription: data });
 });
 
+router.post("/:id/renew", adminProtect, async (req, res) => {
+  const { id } = req.params;
+  const { plan_id, months } = req.body;
+
+  if (!plan_id || !months) {
+    return res.status(400).json({ message: "plan_id and months are required" });
+  }
+
+  const now = new Date();
+  const end = new Date();
+  end.setMonth(end.getMonth() + parseInt(months));
+
+  // Deactivate existing subscriptions
+  await supabase
+    .from("subscriptions")
+    .update({ status: "expired" })
+    .eq("chatbot_id", id)
+    .eq("status", "active");
+
+  // Create new subscription
+  const { error } = await supabase.from("subscriptions").insert([
+    {
+      chatbot_id: id,
+      plan_id,
+      start_date: now.toISOString(),
+      end_date: end.toISOString(),
+      status: "active",
+    },
+  ]);
+
+  if (error) return res.status(500).json({ message: error.message });
+
+  res.json({ success: true, message: "Plan renewed successfully" });
+});
+
 module.exports = router;
