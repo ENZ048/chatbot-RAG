@@ -9,6 +9,7 @@ const {
   getAllChatbotsWithStats,
 } = require("../controllers/chatbotCOntroller");
 const adminProtect = require("../middleware/adminAuthMiddleware");
+const supabase = require("../supabase/client");
 
 router.post("/create", adminProtect, createChatbot);
 router.put("/edit/:id", adminProtect, editChatbot);
