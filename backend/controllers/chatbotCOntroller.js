@@ -42,6 +42,7 @@ exports.createChatbot = async (req, res) => {
 
     if (error) throw error;
 
+
     res.status(201).json({ message: "Chatbot created", data });
   } catch (err) {
     console.error("Create chatbot error:", err.message);

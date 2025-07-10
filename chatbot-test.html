@@ -3,7 +3,7 @@
   (function () {
     sessionStorage.removeItem("troika_greeted");
     let greetingShown = false; // ✅ define it
-    const chatbotId = "6937cb59-2477-48a9-b7bd-7fd1930f1628";
+    const chatbotId = "7c0bd48c-a3b0-41cf-844f-1452d1e7b161";
     const sessionId =
       localStorage.getItem("troika_session") || crypto.randomUUID();
     localStorage.setItem("troika_session", sessionId);
@@ -13,15 +13,14 @@
     position: fixed;
     bottom: 20px;
     right: 20px;
-    width: 60px;
-    height: 60px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #6366F1, #4F46E5);
     color: white;
     font-size: 28px;
     border: none;
+    background: none; !important
     cursor: pointer;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.2);
     z-index: 9999;
   }
 
@@ -172,6 +171,49 @@
   white-space: nowrap;
 }
 
+#troika-chat-label {
+  position: fixed;
+  bottom: 100px; /* Pushes label above the chat button */
+  right: 40px;  /* Aligns horizontally with button */
+  background: #4F46E5;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: bold;
+  font-family: "Segoe UI", sans-serif;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+  z-index: 9999;
+  animation: fadeInUp 0.3s ease;
+}
+
+
+#troika-chat-label::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: #4F46E5 transparent transparent transparent;
+}
+
+
+
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 
 
 `;
@@ -182,8 +224,16 @@
 
     const button = document.createElement("button");
     button.id = "troika-chat-button";
-    button.innerHTML = "💬";
+    const logoUrl =
+      "https://blog.aiwebdesigncompany.com/wp-content/uploads/2025/07/AI-Assitatant-logo.png"; // ⬅️ Replace with your logo link
+    button.innerHTML = `<img src="${logoUrl}" alt="Chat" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" />`;
+
     document.body.appendChild(button);
+
+    const label = document.createElement("div");
+    label.id = "troika-chat-label";
+    label.innerText = "Troika AI Assistant";
+    document.body.appendChild(label);
 
     const chatbox = document.createElement("div");
     chatbox.id = "troika-chatbox";
@@ -204,11 +254,13 @@
 
     button.onclick = () => {
       chatbox.style.display = "flex";
+      label.style.display = "none";
       showGreeting();
     };
 
     closeBtn.onclick = () => {
       chatbox.style.display = "none";
+      label.style.display = "block";
     };
 
     function showGreeting() {
