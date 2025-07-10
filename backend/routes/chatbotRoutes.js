@@ -31,6 +31,8 @@ router.get("/:id/subscription", async (req, res) => {
     .single();
 
   if (error) return res.status(500).json({ message: error.message });
+  if (!data) return res.status(404).json({ message: "No active plan" });
+
   res.json({ subscription: data });
 });
 
@@ -45,6 +47,15 @@ router.post("/:id/renew", adminProtect, async (req, res) => {
   const now = new Date();
   const end = new Date();
   end.setMonth(end.getMonth() + parseInt(months));
+
+  // Optionally fetch plan name
+  const { data: planData, error: planError } = await supabase
+    .from("plans")
+    .select("name")
+    .eq("id", plan_id)
+    .maybeSingle();
+
+  if (planError) return res.status(500).json({ message: planError.message });
 
   // Deactivate existing subscriptions
   await supabase
@@ -61,6 +72,7 @@ router.post("/:id/renew", adminProtect, async (req, res) => {
       start_date: now.toISOString(),
       end_date: end.toISOString(),
       status: "active",
+      plan_name: planData?.name || null,
     },
   ]);
 

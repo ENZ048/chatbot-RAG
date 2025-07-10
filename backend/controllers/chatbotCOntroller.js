@@ -27,8 +27,8 @@ exports.createChatbot = async (req, res) => {
 
     const { name: companyName, url: companyUrl } = companyData;
 
-    // ✅ Insert chatbot with all required fields
-    const { data, error } = await supabase
+    // ✅ Insert chatbot
+    const { data: chatbotData, error } = await supabase
       .from("chatbots")
       .insert([
         {
@@ -38,12 +38,45 @@ exports.createChatbot = async (req, res) => {
           name,
         },
       ])
-      .select("*");
+      .select("*")
+      .single();
 
     if (error) throw error;
 
+    // ✅ Assign default 1-month subscription plan
+    const DEFAULT_PLAN_ID = "5da80e73-d3d1-40eb-83ac-147e4359e63a"; // Replace with actual ID from `plans` table
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setMonth(endDate.getMonth() + 1); // Add 1 month
 
-    res.status(201).json({ message: "Chatbot created", data });
+    const { data: planData, error: planError } = await supabase
+      .from("plans")
+      .select("name")
+      .eq("id", DEFAULT_PLAN_ID)
+      .single();
+
+    if (planError) throw planError;
+
+    const { error: subscriptionError } = await supabase
+      .from("subscriptions")
+      .insert([
+        {
+          chatbot_id: chatbotData.id,
+          plan_id: DEFAULT_PLAN_ID,
+          start_date: startDate.toISOString(),
+          end_date: endDate.toISOString(),
+          status: "active",
+          plan_name: planData.name,
+          company_name: companyName,
+        },
+      ]);
+
+    if (subscriptionError) throw subscriptionError;
+
+    res.status(201).json({
+      message: "Chatbot created with default plan",
+      data: chatbotData,
+    });
   } catch (err) {
     console.error("Create chatbot error:", err.message);
     res.status(500).json({ message: "Server error while creating chatbot" });
@@ -193,7 +226,7 @@ exports.fetchChatbotsWithStats = async () => {
         .from("messages")
         .select("sender, content")
         .eq("chatbot_id", bot.id)
-        .order("timestamp", { ascending: false }) 
+        .order("timestamp", { ascending: false })
         .limit(100); // latest 10 messages
 
       if (historyErr) throw historyErr;
@@ -221,3 +254,5 @@ exports.fetchChatbotsWithStats = async () => {
 
   return enriched;
 };
+
+
