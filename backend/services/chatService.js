@@ -11,7 +11,7 @@ async function generateAnswer(query, contextChunks) {
 
     return {
       answer: demoMessage,
-      suggestions: ["Fill contact form", "View demo page", "Get started"],
+      suggestions: ["Services", "Contact info", "Know More About Troika"],
       tokens: 0,
     };
   }
