@@ -4,6 +4,7 @@ const sendEmailWithPDF = require("../pdf/sendEmailWithPDF");
 const dayjs = require("dayjs");
 const duration = require("dayjs/plugin/duration");
 dayjs.extend(duration);
+const supabase = require("../supabase/client");
 
 const runWeeklyReportJob = async () => {
   const chatbots = await fetchChatbotsWithStats();
@@ -18,32 +19,46 @@ const runWeeklyReportJob = async () => {
   for (const [email, bots] of Object.entries(grouped)) {
     for (const bot of bots) {
       try {
-        const start = dayjs(bot.start_date);
-        const end = dayjs(bot.end_date);
+        // 🧾 Fetch plan details from subscriptions and plans
+        const { data: plan } = await supabase
+          .from("subscriptions")
+          .select("*, plans(*)")
+          .eq("chatbot_id", bot.id)
+          .eq("status", "active")
+          .maybeSingle();
+
+        const start = plan?.start_date ? dayjs(plan.start_date) : null;
+        const end = plan?.end_date ? dayjs(plan.end_date) : null;
         const today = dayjs();
-        const totalDays = end.diff(start, "day");
-        const daysRemaining = end.diff(today, "day");
 
-        // const usedTokens = bot.used_tokens || 0;
-        // const tokenLimit = bot.token_limit || 0;
-        // const remainingTokens = tokenLimit > 0 ? Math.max(tokenLimit - usedTokens, 0) : "Unlimited";
-        const usersUsed = bot.unique_users || 0;
-        const remainingUsers = tokenLimit > 0 ? Math.max(tokenLimit - usersUsed, 0) : "Unlimited";
+        const totalDays = start && end ? end.diff(start, "day") : "N/A";
+        const daysRemaining = end ? end.diff(today, "day") : "N/A";
 
+        const planName = plan?.plans?.name || "N/A";
+        const maxUsers = plan?.plans?.max_users || "N/A";
+
+        // 👥 Count verified users
+        const { data: verifiedUsers } = await supabase
+          .from("verified_users")
+          .select("id")
+          .eq("chatbot_id", bot.id);
+        const usersUsed = verifiedUsers?.length || 0;
+        const remainingUsers =
+          typeof maxUsers === "number" ? Math.max(maxUsers - usersUsed, 0) : "N/A";
+
+        // 📄 Generate PDF
         const pdfBuffer = await generateWeeklyPDFBuffer({
           name: bot.name,
           companyName: bot.company_name,
           domain: bot.company_url,
-          planName: bot.plan_name || "Business",
+          planName,
           planDuration: totalDays,
-          startDate: start.format("DD/MM/YYYY"),
-          endDate: end.format("DD/MM/YYYY"),
+          startDate: start?.format("DD/MM/YYYY") || "N/A",
+          endDate: end?.format("DD/MM/YYYY") || "N/A",
           daysRemaining,
-        //   tokenLimit,
           uniqueUsers: usersUsed,
           remainingUsers,
           totalMessages: bot.total_messages,
-        //   usedTokens,
           messageHistory: bot.message_history || [],
         });
 

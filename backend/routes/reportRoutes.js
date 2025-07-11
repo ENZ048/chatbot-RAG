@@ -1,20 +1,11 @@
 const express = require("express");
 const router = express.Router();
-const { runDailyReportJob } = require("../services/dailyReportRunner");
 const supabase = require("../supabase/client");
-const generatePDFBuffer = require("../pdf/generatePDFBuffer");
 const QuickChart = require("quickchart-js");
-const { runWeeklyReportJob } = require("../services/runWeeklyReportJob");
 
-router.post("/send", async (req, res) => {
-  try {
-    await runDailyReportJob();
-    res.status(200).json({ success: true, message: "Daily report sent." });
-  } catch (err) {
-    console.error("❌ Error in /api/send-report:", err);
-    res.status(500).json({ error: err.message || "Internal Server Error" });
-  }
-});
+const { runDailyReportJob } = require("../services/dailyReportRunner");
+const { runWeeklyReportJob } = require("../services/runWeeklyReportJob");
+const generatePDFBuffer = require("../pdf/generatePDFBuffer");
 
 function getTokenChartImageURL(usedTokens, remainingTokens) {
   const qc = new QuickChart();
@@ -35,6 +26,29 @@ function getTokenChartImageURL(usedTokens, remainingTokens) {
   return qc.getUrl();
 }
 
+// 📩 Daily Report Job Trigger
+router.post("/send", async (req, res) => {
+  try {
+    await runDailyReportJob();
+    res.status(200).json({ success: true, message: "Daily report sent." });
+  } catch (err) {
+    console.error("❌ Error in /api/send-report:", err);
+    res.status(500).json({ error: err.message || "Internal Server Error" });
+  }
+});
+
+// 📩 Weekly Report Job Trigger
+router.post("/send-weekly", async (req, res) => {
+  try {
+    await runWeeklyReportJob();
+    res.status(200).json({ success: true, message: "Weekly report sent." });
+  } catch (err) {
+    console.error("❌ Error in /api/send-weekly:", err);
+    res.status(500).json({ error: err.message || "Internal Server Error" });
+  }
+});
+
+// 📥 Admin-only: Download Report PDF
 router.get("/download/:id", async (req, res) => {
   try {
     const chatbotId = req.params.id;
@@ -55,7 +69,7 @@ router.get("/download/:id", async (req, res) => {
       .eq("id", chatbot.company_id)
       .single();
 
-    // 3. Fetch plan (active)
+    // 3. Fetch active plan subscription
     const { data: plan } = await supabase
       .from("subscriptions")
       .select("*, plans(*)")
@@ -65,19 +79,19 @@ router.get("/download/:id", async (req, res) => {
 
     const startDate = plan?.start_date ? new Date(plan.start_date) : null;
     const endDate = plan?.end_date ? new Date(plan.end_date) : null;
-    const daysLeft =
-      startDate && endDate
-        ? Math.max(0, Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24)))
-        : "N/A";
     const planDuration =
       startDate && endDate
         ? Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24))
+        : "N/A";
+    const daysLeft =
+      endDate
+        ? Math.max(0, Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24)))
         : "N/A";
 
     const planName = plan?.plans?.name || "N/A";
     const maxUsers = plan?.plans?.max_users || "N/A";
 
-    // 4. Fetch all messages
+    // 4. Fetch message history
     const { data: messageHistory } = await supabase
       .from("messages")
       .select("*")
@@ -86,24 +100,25 @@ router.get("/download/:id", async (req, res) => {
 
     const totalMessages = messageHistory.length;
 
-    // 5. Fetch verified user count (each verified OTP session counts even if user returns after 12h)
+    // 5. Count verified user sessions
     const { data: verifiedUsers } = await supabase
       .from("verified_users")
       .select("id")
       .eq("chatbot_id", chatbotId);
 
-    const userCount = verifiedUsers.length;
+    const uniqueUsers = verifiedUsers.length;
     const usersLeft =
-      typeof maxUsers === "number" ? Math.max(maxUsers - userCount, 0) : "N/A";
+      typeof maxUsers === "number" ? Math.max(maxUsers - uniqueUsers, 0) : "N/A";
 
-    // 6. Token chart
+    // 6. Generate chart
     const remainingTokens =
       chatbot.token_limit != null && chatbot.used_tokens != null
         ? Math.max(chatbot.token_limit - chatbot.used_tokens, 0)
         : "Unlimited";
+
     const chartURL = getTokenChartImageURL(
-      chatbot.used_tokens,
-      remainingTokens
+      chatbot.used_tokens || 0,
+      remainingTokens === "Unlimited" ? 0 : remainingTokens
     );
 
     // 7. Final Report Data
@@ -115,7 +130,7 @@ router.get("/download/:id", async (req, res) => {
       usedTokens: chatbot.used_tokens,
       remainingTokens,
       totalMessages,
-      uniqueUsers: userCount,
+      uniqueUsers,
       usersLeft,
       planName,
       startDate: startDate?.toLocaleDateString("en-GB") || "N/A",
@@ -136,18 +151,8 @@ router.get("/download/:id", async (req, res) => {
 
     res.send(pdfBuffer);
   } catch (err) {
-    console.error("Error generating chatbot report:", err);
+    console.error("❌ Error generating chatbot report:", err);
     res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-router.post("/send-weekly", async (req, res) => {
-  try {
-    await runWeeklyReportJob();
-    res.status(200).json({ success: true, message: "Weekly report sent." });
-  } catch (err) {
-    console.error("❌ Error in /api/send-weekly:", err);
-    res.status(500).json({ error: err.message || "Internal Server Error" });
   }
 });
 
