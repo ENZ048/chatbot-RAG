@@ -92,9 +92,23 @@ exports.verifyOtp = async (req, res) => {
     await supabase
       .from("user_sessions")
       .insert([
-        { id: uuidv4(), email,chatbot_id: chatbotId, last_verified: new Date().toISOString() },
+        {
+          id: uuidv4(),
+          email,
+          chatbot_id: chatbotId,
+          last_verified: new Date().toISOString(),
+        },
       ]);
   }
+
+  await supabase.from("verified_users").insert([
+    {
+      email,
+      chatbot_id: chatbotId,
+      verified_at: new Date().toISOString(),
+      session_id: req.body.sessionId || null,
+    },
+  ]);
 
   res.json({ success: true });
 };
@@ -112,6 +126,8 @@ exports.checkSession = async (req, res) => {
 
   if (!data || data.length === 0) return res.json({ valid: false });
 
+  const SESSION_VALIDITY_HOURS = 6;
+
   const diffHours = (new Date() - new Date(data[0].last_verified)) / 3600000;
-  return res.json({ valid: diffHours < 12 });
+  return res.json({ valid: diffHours < SESSION_VALIDITY_HOURS });
 };

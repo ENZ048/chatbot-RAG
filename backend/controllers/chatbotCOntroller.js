@@ -133,15 +133,13 @@ exports.getAllChatbotsWithStats = async (req, res) => {
     const enriched = await Promise.all(
       chatbots.map(async (bot) => {
         // Get all messages for chatbot
-        const { data: messages, error: msgErr } = await supabase
-          .from("messages")
-          .select("session_id")
+        // Count total verified user sessions
+        const { count: uniqueUsers, error: userErr } = await supabase
+          .from("verified_users")
+          .select("*", { count: "exact", head: true })
           .eq("chatbot_id", bot.id);
 
-        if (msgErr) throw msgErr;
-
-        const uniqueSessions = new Set(messages.map((m) => m.session_id));
-        const uniqueUsers = uniqueSessions.size;
+        if (userErr) throw userErr;
 
         const { count: totalMessages } = await supabase
           .from("messages")
@@ -230,9 +228,13 @@ exports.fetchChatbotsWithStats = async () => {
         .limit(100); // latest 10 messages
 
       if (historyErr) throw historyErr;
+      
+      const { count: uniqueUsers, error: userErr } = await supabase
+        .from("verified_users")
+        .select("*", { count: "exact", head: true })
+        .eq("chatbot_id", bot.id);
 
-      const uniqueSessions = new Set(messages.map((m) => m.session_id));
-      const uniqueUsers = uniqueSessions.size;
+      if (userErr) throw userErr;
 
       const { count: totalMessages } = await supabase
         .from("messages")
@@ -254,5 +256,3 @@ exports.fetchChatbotsWithStats = async () => {
 
   return enriched;
 };
-
-
