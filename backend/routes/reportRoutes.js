@@ -4,7 +4,7 @@ const { runDailyReportJob } = require("../services/dailyReportRunner");
 const supabase = require("../supabase/client");
 const generatePDFBuffer = require("../pdf/generatePDFBuffer");
 const QuickChart = require("quickchart-js");
-const { runWeeklyReportJob } = require("../services/weeklyReportRunner");
+const { runWeeklyReportJob } = require("../services/runWeeklyReportJob");
 
 router.post("/send", async (req, res) => {
   try {
