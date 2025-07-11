@@ -6,6 +6,8 @@ const supabase = require("../supabase/client");
 exports.login = async (req, res) => {
   const { email, password } = req.body;
 
+  console.log(req.body);
+
   try {
     const admin = await findAdminByEmail(email);
     if (!admin) {

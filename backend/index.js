@@ -16,6 +16,7 @@ const corsOptions = {
     "https://blog.aiwebdesigncompany.com",
     "https://chatbot-dashboard-alpha.vercel.app",
     "https://troikatech.net",
+    "https://troikatech.ai/proactive",
   ],
   credentials: true,
 };
