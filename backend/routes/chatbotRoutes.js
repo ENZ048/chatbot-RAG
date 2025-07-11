@@ -10,6 +10,10 @@ const {
 } = require("../controllers/chatbotCOntroller");
 const adminProtect = require("../middleware/adminAuthMiddleware");
 const supabase = require("../supabase/client");
+const {
+  getClientConfig,
+  updateClientConfig,
+} = require("../controllers/clientConfigController");
 
 router.post("/create", adminProtect, createChatbot);
 router.put("/edit/:id", adminProtect, editChatbot);
@@ -80,5 +84,8 @@ router.post("/:id/renew", adminProtect, async (req, res) => {
 
   res.json({ success: true, message: "Plan renewed successfully" });
 });
+
+router.get("/:id/config", getClientConfig); // Get config
+router.put("/:id/config", updateClientConfig);
 
 module.exports = router;

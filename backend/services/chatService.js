@@ -1,19 +1,45 @@
 const axios = require("axios");
 
-async function generateAnswer(query, contextChunks) {
+async function generateAnswer(query, contextChunks, clientConfig = {}) {
   // 👇 Check for demo-related intent
   const lowerQuery = query.toLowerCase();
-  const demoKeywords = ["demo", "free trial", "try it", "sample", "test it"];
-  const isDemoRequest = demoKeywords.some((word) => lowerQuery.includes(word));
+  const demoKeywords = clientConfig?.demo_keywords || [
+    "demo",
+    "free trial",
+    "try it",
+    "sample",
+    "test it",
+  ];
+
+  const normalizedKeywords = demoKeywords.map((word) => word.toLowerCase());
+  const isDemoRequest = normalizedKeywords.some((word) =>
+    lowerQuery.includes(word)
+  );
 
   if (isDemoRequest) {
-    const demoMessage = `Absolutely! You can try a free demo by filling out the contact form here: [Free Demo](https://troikatech.net/ai-website-design-company-in-mumbai/)`;
+    const hasCustomDemo = clientConfig?.demo_link || clientConfig?.demo_message;
 
-    return {
-      answer: demoMessage,
-      suggestions: ["Services", "Contact info", "Know More About Troika"],
-      tokens: 0,
-    };
+    if (hasCustomDemo) {
+      const demoURL = clientConfig?.demo_link;
+      const demoMessage =
+        clientConfig?.demo_message ||
+        `Absolutely! You can try a free demo by filling out the contact form here: [Free Demo](${demoURL})`;
+
+      const demoSuggestions = clientConfig?.default_suggestions || [
+        "Services",
+        "Contact info",
+        "Know More About Us",
+      ];
+
+      return {
+        answer: demoMessage,
+        suggestions: demoSuggestions,
+        tokens: 0,
+      };
+    }
+
+    // Let OpenAI handle the generic demo request naturally
+    // (Continue to rest of function)
   }
 
   // 🔁 Proceed with regular OpenAI-based generation
@@ -93,7 +119,7 @@ Answer: "${mainAnswer}"`;
       suggestions,
       tokens:
         response.data.usage.total_tokens +
-        suggestionResponse.data.usage?.total_tokens || 0,
+          suggestionResponse.data.usage?.total_tokens || 0,
     };
   } catch (error) {
     console.error(
@@ -108,7 +134,6 @@ Answer: "${mainAnswer}"`;
     };
   }
 }
-
 
 function generateSuggestions(rawSuggestions) {
   const maxLength = 80; // Max characters per suggestion

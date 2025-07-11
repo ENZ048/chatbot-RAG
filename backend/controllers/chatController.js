@@ -2,6 +2,7 @@
 const { retrieveRelevantChunks } = require("../services/queryService");
 const { generateAnswer } = require("../services/chatService");
 const supabase = require("../supabase/client");
+const { getClientConfig } = require("../services/configService");
 
 exports.answerQuery = async (req, res) => {
   try {
@@ -25,11 +26,17 @@ exports.answerQuery = async (req, res) => {
         .json({ message: "This chatbot's subscription is inactive." });
     }
 
+    
+
     const chunks = await retrieveRelevantChunks(query, chatbotId);
     const topContext = chunks.map((c) => c.content);
+
+    const clientConfig = await getClientConfig(chatbotId);
+
     const { answer, tokens, suggestions } = await generateAnswer(
       query,
-      topContext
+      topContext,
+      clientConfig
     );
 
     await supabase
